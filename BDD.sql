@@ -1,11 +1,10 @@
--- D'abord nous besion de créer une nouvelle base de données sous le nome "projet" --
 DISC;
 
 CONN SYSTEM/"projet";
 
 DROP USER BDDADMIN CASCADE;
 
-CREATE USER BDDADMIN IDENTIFIED BY TPADMIN;
+CREATE USER BDDADMIN IDENTIFIED BY TPAdmin;
 
 GRANT ALL PRIVILEGES TO BDDADMIN;
 
@@ -13,7 +12,7 @@ GRANT UNLIMITED TABLESPACE TO BDDADMIN;
 
 DISC;
 
-CONN BDDADMIN/TPADMIN;
+CONN BDDADMIN/"TPAdmin";
 
 CREATE TABLE ETUDIANT (
     MATRICULE_ETU NUMBER(8) PRIMARY KEY,
@@ -50,13 +49,13 @@ CREATE TABLE ETUDIANTUNITE (
 
 DROP USER ETUDIANT CASCADE;
 
-CREATE USER ETUDIANT IDENTIFIED BY TPETUDIANT;
+CREATE USER ETUDIANT IDENTIFIED BY TPEtudiant;
 
 GRANT SELECT ON ETUDIANT TO ETUDIANT;
 
 DROP USER ENSEIGNANT CASCADE;
 
-CREATE USER ENSEIGNANT IDENTIFIED BY TPENSEIGNANT;
+CREATE USER ENSEIGNANT IDENTIFIED BY TPEnseignant;
 
 GRANT CREATE SESSION TO BDDADMIN;
 
@@ -249,6 +248,8 @@ WHERE
         SELECT CODE_UNITE FROM UNITE WHERE LIBELLE='SYSTEME'
     );
 
+COMMIT;
+/*Afficher les noms et prénoms des étudiants ayant obtenu des notes d'examens égales à 20.*/
 SELECT
     NOM_ETU,
     PRENOM_ETU
@@ -263,6 +264,8 @@ WHERE
         WHERE
             NOTE_EXAMEN=20
     );
+
+/*Afficher les noms et prénoms des étudiants qui ne sont pas inscrits dans l'unité « POO ».*/
 
 SELECT
     NOM_ETU,
@@ -285,3 +288,37 @@ WHERE
                     LIBELLE='POO'
             )
     );
+
+-- Afficher les libellés des unités d'enseignement dont aucun étudiant n'est inscrit.
+SELECT
+    LIBELLE
+FROM
+    UNITE
+WHERE
+    CODE_UNITE NOT IN (
+        SELECT
+            CODE_UNITE
+        FROM
+            ETUDIANTUNITE
+    );
+
+-- /* Afficher pour chaque étudiant, son nom, son prénom sa moyenne par unité d'enseignement
+-- ainsi que le libellé de l'unité. */
+
+SELECT
+    E.NOM_ETU,
+    E.PRENOM_ETU,
+    (EU.NOTE_CC + EU.NOTE_TP + EU.NOTE_EXAMEN) / 3 AS MOYENNE,
+    U.LIBELLE
+FROM
+    ETUDIANT      E,
+    ETUDIANTUNITE EU,
+    UNITE         U
+WHERE
+    E.MATRICULE_ETU = EU.MATRICULE_ETU
+    AND EU.CODE_UNITE = U.CODE_UNITE
+GROUP BY
+    E.NOM_ETU,
+    E.PRENOM_ETU,
+    U.LIBELLE,
+    (EU.NOTE_CC + EU.NOTE_TP + EU.NOTE_EXAMEN) / 3;
